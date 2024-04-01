@@ -976,6 +976,7 @@ dependencies = [
 name = "snowbridge-amcl"
 version = "1.0.2"
 dependencies = [
+ "cfg-if 1.0.0",
  "criterion",
  "hex",
  "parity-scale-codec",

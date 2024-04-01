@@ -24,6 +24,8 @@ use super::rom;
 
 pub use super::rom::{AESKEY, CURVETYPE, CURVE_PAIRING_TYPE, HASH_TYPE, SEXTIC_TWIST, SIGN_OF_X};
 pub use crate::types::CurveType;
+use super::big::NLEN;
+use crate::arch::Chunk;
 
 use crate::std::{fmt, format, str::SplitWhitespace, string::String};
 
