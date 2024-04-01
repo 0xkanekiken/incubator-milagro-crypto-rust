@@ -26,6 +26,9 @@ pub mod rand;
 pub mod sha3;
 pub mod types;
 
+#[cfg(all(target_os = "zkvm", target_vendor = "succinct"))]
+mod succinct;
+
 #[cfg(feature = "bls48")]
 #[path = "./"]
 pub mod bls48 {
