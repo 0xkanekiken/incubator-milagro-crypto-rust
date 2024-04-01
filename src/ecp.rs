@@ -24,8 +24,8 @@ use super::rom;
 
 pub use super::rom::{AESKEY, CURVETYPE, CURVE_PAIRING_TYPE, HASH_TYPE, SEXTIC_TWIST, SIGN_OF_X};
 pub use crate::types::CurveType;
-use super::big::NLEN;
 use crate::arch::Chunk;
+use alloc::vec::Vec;
 
 use crate::std::{fmt, format, str::SplitWhitespace, string::String};
 
@@ -33,7 +33,7 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 
 /// MODULUS of BLS12381 curve.
-pub const BLS12381_MODULUS: [Chunk; NLEN] = [
+pub const BLS12381_MODULUS: [Chunk; 7] = [
     0x1FEFFFFFFFFAAAB,
     0x2FFFFAC54FFFFEE,
     0x12A0F6B0F6241EA,
@@ -763,17 +763,17 @@ impl ECP {
                         if #[cfg(all(target_os = "zkvm", target_vendor = "succinct"))] {
                             mod succinct;
 
-                            let point = self.clone();
-                            let q_point = Q.clone();
-                            let (p_x, p_y) = self.affine();
-                            let mut p_x = p_x.to_bytes();
-                            let mut p_y = p_y.to_bytes();
+                            let mut point = self.clone();
+                            let mut q_point = Q.clone();
+                            point.affine();
+                            let mut p_x = point.x.to_bytes();
+                            let mut p_y = point.y.to_bytes();
                             p_x.reverse();
                             p_y.reverse();
 
-                            let (q_x, q_y) = Q.affine();
-                            let mut q_x = q_x.to_bytes();
-                            let mut q_y = q_y.to_bytes();
+                            Q.affine();
+                            let mut q_x = q_point.x.to_bytes();
+                            let mut q_y = q_point.y.to_bytes();
                             q_x.reverse();
                             q_y.reverse();
 
@@ -789,7 +789,7 @@ impl ECP {
                             let mut output = [0u8; 96];
 
                             output[..48].copy_from_slice(&p[..48].iter().rev().copied().collect::<Vec<_>>());
-                            output[48..].copy_from_slice(&p_bytes[48..].iter().rev().copied().collect::<Vec<_>>());
+                            output[48..].copy_from_slice(&p[48..].iter().rev().copied().collect::<Vec<_>>());
 
                             *self = ECP::from_bytes(&output);
                         } else {
