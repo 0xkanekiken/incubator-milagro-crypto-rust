@@ -32,6 +32,16 @@ use crate::std::{fmt, format, str::SplitWhitespace, string::String};
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 
+const BLS12381_MODULUS: [Chunk; 7] = [
+    0x1FEFFFFFFFFAAAB,
+    0x2FFFFAC54FFFFEE,
+    0x12A0F6B0F6241EA,
+    0x213CE144AFD9CC3,
+    0x2434BACD764774B,
+    0x25FF9A692C6E9ED,
+    0x1A0111EA3,
+];
+
 #[derive(Default, Clone, Encode, Decode, TypeInfo, MaxEncodedLen)]
 pub struct ECP {
     x: FP,
@@ -465,6 +475,43 @@ impl ECP {
         }
     }
 
+    /// To little endian Bytes
+    ///
+    /// Convert to little endian byte array
+    /// Panics if byte array is insufficient length.
+    pub fn to_bytes_le(&self, b: &mut [u8], compress: bool) {
+        let mb = big::MODBYTES as usize;
+        let mut t: [u8; big::MODBYTES as usize] = [0; big::MODBYTES as usize];
+        let mut W = self.clone();
+
+        W.affine();
+        W.x.redc().to_bytes(&mut t);
+        for i in 0..mb {
+            b[mb - i - 1] = t[i]
+        }
+
+        if CURVETYPE == CurveType::Montgomery {
+            b[mb] = 0x06;
+            return;
+        }
+
+        if compress {
+            b[mb] = 0x02;
+            if W.y.redc().parity() == 1 {
+                b[mb] = 0x03;
+            }
+            return;
+        }
+    
+        b[mb] = 0x04;
+        W.y.redc().to_bytes(&mut t);
+
+        // Copy bytes in little-endian order
+        for i in 0..mb {
+            b[2 * mb - 1 - i] = t[i];
+        }
+    }
+
     /// From Bytes
     ///
     /// Convert from byte array to point
@@ -747,31 +794,36 @@ impl ECP {
     pub fn add(&mut self, Q: &ECP) {
         if CURVETYPE == CurveType::Weierstrass {
             if rom::CURVE_A == 0 {
-                if len(rom::MODULUS) == 7 && BLS12381_MODULUS[6] == rom::MODULUS[6] {
+                if rom::MODULUS.len() == 7 && BLS12381_MODULUS[6] == rom::MODULUS[6] {
                     cfg_if::cfg_if! {
                         if #[cfg(all(target_os = "zkvm", target_vendor = "succinct"))] {
-                            mod succinct;
+                            use crate::succinct::bls12381_add;
 
                             let mut point = self.clone();
                             let mut q_point = Q.clone();
+                            let p_bytes = [u8; 96];
+                            let q_bytes = [u8; 96];
                             point.affine();
-                            let mut p_x = point.x.x.to_bytes();
-                            let mut p_y = point.y.x.to_bytes();
-                            p_x.reverse();
-                            p_y.reverse();
+                            point.to_bytes_le(&mut p_bytes, false);
+                            q_point.affine();
+                            q_point.to_bytes_le(&mut q_bytes, false);
+                            // let mut p_x = point.x.x.to_bytes();
+                            // let mut p_y = point.y.x.to_bytes();
+                            // p_x.reverse();
+                            // p_y.reverse();
 
-                            Q.affine();
-                            let mut q_x = q_point.x.x.to_bytes();
-                            let mut q_y = q_point.y.x.to_bytes();
-                            q_x.reverse();
-                            q_y.reverse();
+                            // Q.affine();
+                            // let mut q_x = q_point.x.x.to_bytes();
+                            // let mut q_y = q_point.y.x.to_bytes();
+                            // q_x.reverse();
+                            // q_y.reverse();
 
-                            let mut p = [0u8; 96];
-                            let mut q = [0u8; 96];
-                            p[..48].copy_from_slice(&p_x);
-                            p[48..].copy_from_slice(&p_y);
-                            q[..48].copy_from_slice(&q_x);
-                            q[96..].copy_from_slice(&q_y);
+                            // let mut p = [0u8; 96];
+                            // let mut q = [0u8; 96];
+                            // p[..48].copy_from_slice(&p_x);
+                            // p[48..].copy_from_slice(&p_y);
+                            // q[..48].copy_from_slice(&q_x);
+                            // q[96..].copy_from_slice(&q_y);
 
                             succinct::bls12381_add(&mut p, &q);
 

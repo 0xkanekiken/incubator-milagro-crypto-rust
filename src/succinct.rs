@@ -3,6 +3,6 @@ extern "C" {
 }
 
 #[inline]
-pub fn bls12381_add(p: &mut [u32; 8], q: &[u32; 8]) {
-    unsafe { syscall_bls12381_add(p.as_mut_ptr(), q.as_ptr()) }
+pub fn bls12381_add(p: &mut [u8; 32], q: &[u8; 32]) {
+    unsafe { syscall_bls12381_add(p.as_mut_ptr() as *mut u32, q.as_ptr() as *const u32) }
 }
