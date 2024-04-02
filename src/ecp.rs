@@ -801,8 +801,8 @@ impl ECP {
 
                             let mut point = self.clone();
                             let mut q_point = Q.clone();
-                            let p_bytes = [0u8; 96];
-                            let q_bytes = [0u8; 96];
+                            let mut p_bytes = [0u8; 96];
+                            let mut q_bytes = [0u8; 96];
                             point.affine();
                             point.to_bytes_le(&mut p_bytes, false);
                             q_point.affine();
