@@ -794,7 +794,6 @@ impl ECP {
     pub fn add(&mut self, Q: &ECP) {
         if CURVETYPE == CurveType::Weierstrass {
             if rom::CURVE_A == 0 {
-                if rom::MODULUS.len() == 7 && BLS12381_MODULUS[6] == rom::MODULUS[6] {
                     cfg_if::cfg_if! {
                         if #[cfg(all(target_os = "zkvm", target_vendor = "succinct"))] {
                             use crate::succinct::bls12381_add;
@@ -910,82 +909,7 @@ impl ECP {
                             self.z.norm();
                         }
                     }
-                } else {
-                    let b = 3 * rom::CURVE_B_I;
-                    let mut t0 = self.x.clone();
-                    t0.mul(&Q.x);
-                    let mut t1 = self.y.clone();
-                    t1.mul(&Q.y);
-                    let mut t2 = self.z.clone();
-                    t2.mul(&Q.z);
-                    let mut t3 = self.x.clone();
-                    t3.add(&self.y);
-                    t3.norm();
-                    let mut t4 = Q.x.clone();
-                    t4.add(&Q.y);
-                    t4.norm();
-                    t3.mul(&t4);
-                    t4 = t0.clone();
-                    t4.add(&t1);
-
-                    t3.sub(&t4);
-                    t3.norm();
-                    t4 = self.getpy();
-                    t4.add(&self.z);
-                    t4.norm();
-                    let mut x3 = Q.y.clone();
-                    x3.add(&Q.z);
-                    x3.norm();
-
-                    t4.mul(&x3);
-                    x3 = t1.clone();
-                    x3.add(&t2);
-
-                    t4.sub(&x3);
-                    t4.norm();
-                    x3 = self.getpx();
-                    x3.add(&self.z);
-                    x3.norm();
-                    let mut y3 = Q.x.clone();
-                    y3.add(&Q.z);
-                    y3.norm();
-                    x3.mul(&y3);
-                    y3 = t0.clone();
-                    y3.add(&t2);
-                    y3.rsub(&x3);
-                    y3.norm();
-                    x3 = t0.clone();
-                    x3.add(&t0);
-                    t0.add(&x3);
-                    t0.norm();
-                    t2.imul(b);
-
-                    let mut z3 = t1.clone();
-                    z3.add(&t2);
-                    z3.norm();
-                    t1.sub(&t2);
-                    t1.norm();
-                    y3.imul(b);
-
-                    x3 = y3.clone();
-                    x3.mul(&t4);
-                    t2 = t3.clone();
-                    t2.mul(&t1);
-                    x3.rsub(&t2);
-                    y3.mul(&t0);
-                    t1.mul(&z3);
-                    y3.add(&t1);
-                    t0.mul(&t3);
-                    z3.mul(&t4);
-                    z3.add(&t0);
-
-                    self.x = x3.clone();
-                    self.x.norm();
-                    self.y = y3.clone();
-                    self.y.norm();
-                    self.z = z3.clone();
-                    self.z.norm();
-                }
+                
             } else {
                 let mut t0 = self.x.clone();
                 let mut t1 = self.y.clone();
