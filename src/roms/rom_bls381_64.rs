@@ -221,3 +221,5 @@ pub const SSWU_Z2_B: [Chunk; NLEN] = [
     0x25ff9a692c6e9ed,
     0x1a0111ea3,
 ];
+
+pub const NAME: &str = "BLS12381_64";

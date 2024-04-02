@@ -32,17 +32,6 @@ use crate::std::{fmt, format, str::SplitWhitespace, string::String};
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 
-/// MODULUS of BLS12381 curve.
-pub const BLS12381_MODULUS: [Chunk; 7] = [
-    0x1FEFFFFFFFFAAAB,
-    0x2FFFFAC54FFFFEE,
-    0x12A0F6B0F6241EA,
-    0x213CE144AFD9CC3,
-    0x2434BACD764774B,
-    0x25FF9A692C6E9ED,
-    0x1A0111EA3,
-];
-
 #[derive(Default, Clone, Encode, Decode, TypeInfo, MaxEncodedLen)]
 pub struct ECP {
     x: FP,
@@ -758,7 +747,7 @@ impl ECP {
     pub fn add(&mut self, Q: &ECP) {
         if CURVETYPE == CurveType::Weierstrass {
             if rom::CURVE_A == 0 {
-                if BLS12381_MODULUS == rom::MODULUS {
+                if len(rom::MODULUS) == 7 && BLS12381_MODULUS[6] == rom::MODULUS[6] {
                     cfg_if::cfg_if! {
                         if #[cfg(all(target_os = "zkvm", target_vendor = "succinct"))] {
                             mod succinct;
@@ -766,14 +755,14 @@ impl ECP {
                             let mut point = self.clone();
                             let mut q_point = Q.clone();
                             point.affine();
-                            let mut p_x = point.x.to_bytes();
-                            let mut p_y = point.y.to_bytes();
+                            let mut p_x = point.x.x.to_bytes();
+                            let mut p_y = point.y.x.to_bytes();
                             p_x.reverse();
                             p_y.reverse();
 
                             Q.affine();
-                            let mut q_x = q_point.x.to_bytes();
-                            let mut q_y = q_point.y.to_bytes();
+                            let mut q_x = q_point.x.x.to_bytes();
+                            let mut q_y = q_point.y.x.to_bytes();
                             q_x.reverse();
                             q_y.reverse();
 
