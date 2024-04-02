@@ -800,36 +800,36 @@ impl ECP {
 
                             let mut point = self.clone();
                             let mut q_point = Q.clone();
-                            let mut p_bytes = [0u8; 96];
-                            let mut q_bytes = [0u8; 96];
-                            point.affine();
-                            point.to_bytes_le(&mut p_bytes, false);
-                            q_point.affine();
-                            q_point.to_bytes_le(&mut q_bytes, false);
-                            // let mut p_x = point.x.x.to_bytes();
-                            // let mut p_y = point.y.x.to_bytes();
-                            // p_x.reverse();
-                            // p_y.reverse();
+                            // let mut p_bytes = [0u8; 96];
+                            // let mut q_bytes = [0u8; 96];
+                            // point.affine();
+                            // point.to_bytes_le(&mut p_bytes, false);
+                            // q_point.affine();
+                            // q_point.to_bytes_le(&mut q_bytes, false);
+                            let mut p_x = point.x.x.to_bytes();
+                            let mut p_y = point.y.x.to_bytes();
+                            p_x.reverse();
+                            p_y.reverse();
 
-                            // Q.affine();
-                            // let mut q_x = q_point.x.x.to_bytes();
-                            // let mut q_y = q_point.y.x.to_bytes();
-                            // q_x.reverse();
-                            // q_y.reverse();
+                            Q.affine();
+                            let mut q_x = q_point.x.x.to_bytes();
+                            let mut q_y = q_point.y.x.to_bytes();
+                            q_x.reverse();
+                            q_y.reverse();
 
-                            // let mut p = [0u8; 96];
-                            // let mut q = [0u8; 96];
-                            // p[..48].copy_from_slice(&p_x);
-                            // p[48..].copy_from_slice(&p_y);
-                            // q[..48].copy_from_slice(&q_x);
-                            // q[96..].copy_from_slice(&q_y);
+                            let mut p = [0u8; 96];
+                            let mut q = [0u8; 96];
+                            p[..48].copy_from_slice(&p_x);
+                            p[48..].copy_from_slice(&p_y);
+                            q[..48].copy_from_slice(&q_x);
+                            q[96..].copy_from_slice(&q_y);
 
-                            bls12381_add(&mut p_bytes, &q_bytes);
+                            bls12381_add(&mut p, &q);
 
                             let mut output = [0u8; 96];
 
-                            output[..48].copy_from_slice(&p_bytes[..48].iter().rev().copied().collect::<Vec<_>>());
-                            output[48..].copy_from_slice(&p_bytes[48..].iter().rev().copied().collect::<Vec<_>>());
+                            output[..48].copy_from_slice(&p[..48].iter().rev().copied().collect::<Vec<_>>());
+                            output[48..].copy_from_slice(&p[48..].iter().rev().copied().collect::<Vec<_>>());
 
                             *self = ECP::from_bytes(&output);
                         } else {
