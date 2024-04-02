@@ -829,7 +829,7 @@ impl ECP {
                             // q[..48].copy_from_slice(&q_x);
                             // q[96..].copy_from_slice(&q_y);
 
-                            bls12381_add(&mut p_x_bytes, &q_x_bytes);
+                            bls12381_add(&mut p_x_bytes.try_into().unwrap(), &q_x_bytes.try_into().unwrap());
 
                             let mut output = [0u8; 96];
 
