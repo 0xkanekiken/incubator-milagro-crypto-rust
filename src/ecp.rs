@@ -825,12 +825,12 @@ impl ECP {
                             // q[..48].copy_from_slice(&q_x);
                             // q[96..].copy_from_slice(&q_y);
 
-                            succinct::bls12381_add(&mut p, &q);
+                            succinct::bls12381_add(&mut p_bytes, &q_bytes);
 
                             let mut output = [0u8; 96];
 
-                            output[..48].copy_from_slice(&p[..48].iter().rev().copied().collect::<Vec<_>>());
-                            output[48..].copy_from_slice(&p[48..].iter().rev().copied().collect::<Vec<_>>());
+                            output[..48].copy_from_slice(&p_bytes[..48].iter().rev().copied().collect::<Vec<_>>());
+                            output[48..].copy_from_slice(&p_bytes[48..].iter().rev().copied().collect::<Vec<_>>());
 
                             *self = ECP::from_bytes(&output);
                         } else {
