@@ -801,8 +801,8 @@ impl ECP {
 
                             let mut point = self.clone();
                             let mut q_point = Q.clone();
-                            let p_bytes = [u8; 96];
-                            let q_bytes = [u8; 96];
+                            let p_bytes = [0u8; 96];
+                            let q_bytes = [0u8; 96];
                             point.affine();
                             point.to_bytes_le(&mut p_bytes, false);
                             q_point.affine();
@@ -825,7 +825,7 @@ impl ECP {
                             // q[..48].copy_from_slice(&q_x);
                             // q[96..].copy_from_slice(&q_y);
 
-                            succinct::bls12381_add(&mut p_bytes, &q_bytes);
+                            bls12381_add(&mut p_bytes, &q_bytes);
 
                             let mut output = [0u8; 96];
 
