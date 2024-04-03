@@ -24,24 +24,14 @@ use super::rom;
 use alloc::vec;
 
 pub use super::rom::{AESKEY, CURVETYPE, CURVE_PAIRING_TYPE, HASH_TYPE, SEXTIC_TWIST, SIGN_OF_X};
-pub use crate::types::CurveType;
 use crate::arch::Chunk;
+pub use crate::types::CurveType;
 use alloc::vec::Vec;
 
 use crate::std::{fmt, format, str::SplitWhitespace, string::String};
 
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-
-const BLS12381_MODULUS: [Chunk; 7] = [
-    0x1FEFFFFFFFFAAAB,
-    0x2FFFFAC54FFFFEE,
-    0x12A0F6B0F6241EA,
-    0x213CE144AFD9CC3,
-    0x2434BACD764774B,
-    0x25FF9A692C6E9ED,
-    0x1A0111EA3,
-];
 
 #[derive(Default, Clone, Encode, Decode, TypeInfo, MaxEncodedLen)]
 pub struct ECP {
@@ -503,7 +493,7 @@ impl ECP {
             }
             return;
         }
-    
+
         b[mb] = 0x04;
         W.y.redc().to_bytes(&mut t);
 
@@ -795,126 +785,14 @@ impl ECP {
     pub fn add(&mut self, Q: &ECP) {
         if CURVETYPE == CurveType::Weierstrass {
             if rom::CURVE_A == 0 {
-                    cfg_if::cfg_if! {
-                        if #[cfg(all(target_os = "zkvm", target_vendor = "succinct"))] {
-                            use crate::succinct::bls12381_add;
+                // Need to come up with a better way to handle this. A separate flag needs to be added.
+                {
+                    #[cfg(all(target_os = "zkvm", target_vendor = "succinct"))]
+                    self.succinct_add(Q);
 
-                            let mut point = self.clone();
-                            let mut q_point = Q.clone();
-                            let mut p_x_bytes = vec![0u8; 48];
-                            let mut p_y_bytes = vec![0u8; 48];
-                            // point.affine();
-                            // point.to_bytes_le(&mut p_bytes, false);
-                            // q_point.affine();
-                            // q_point.to_bytes_le(&mut q_bytes, false);
-                            point.x.x.to_bytes(&mut p_x_bytes);
-                            point.y.x.to_bytes(&mut p_y_bytes);
-                            p_x_bytes.reverse();
-                            p_y_bytes.reverse();
-                            p_x_bytes.append(&mut p_y_bytes);
-
-                            Q.affine();
-                            let mut q_x_bytes = vec![0u8; 48];
-                            let mut q_y_bytes = vec![0u8; 48];
-                            q_point.x.x.to_bytes(&mut q_x_bytes);
-                            q_point.y.x.to_bytes(&mut q_y_bytes);
-                            q_x_bytes.reverse();
-                            q_y_bytes.reverse();
-                            q_x_bytes.append(&mut q_y_bytes);
-
-                            // let mut p = [0u8; 96];
-                            // let mut q = [0u8; 96];
-                            // p[..48].copy_from_slice(&p_x);
-                            // p[48..].copy_from_slice(&p_y);
-                            // q[..48].copy_from_slice(&q_x);
-                            // q[96..].copy_from_slice(&q_y);
-
-                            bls12381_add(&mut p_x_bytes.try_into().unwrap(), &q_x_bytes.try_into().unwrap());
-
-                            let mut output = [0u8; 96];
-
-                            output[..48].copy_from_slice(&p_x_bytes[..48].iter().rev().copied().collect::<Vec<_>>());
-                            output[48..].copy_from_slice(&p_x_bytes[48..].iter().rev().copied().collect::<Vec<_>>());
-
-                            *self = ECP::from_bytes(&output);
-                        } else {
-                            let b = 3 * rom::CURVE_B_I;
-                            let mut t0 = self.x.clone();
-                            t0.mul(&Q.x);
-                            let mut t1 = self.y.clone();
-                            t1.mul(&Q.y);
-                            let mut t2 = self.z.clone();
-                            t2.mul(&Q.z);
-                            let mut t3 = self.x.clone();
-                            t3.add(&self.y);
-                            t3.norm();
-                            let mut t4 = Q.x.clone();
-                            t4.add(&Q.y);
-                            t4.norm();
-                            t3.mul(&t4);
-                            t4 = t0.clone();
-                            t4.add(&t1);
-
-                            t3.sub(&t4);
-                            t3.norm();
-                            t4 = self.getpy();
-                            t4.add(&self.z);
-                            t4.norm();
-                            let mut x3 = Q.y.clone();
-                            x3.add(&Q.z);
-                            x3.norm();
-
-                            t4.mul(&x3);
-                            x3 = t1.clone();
-                            x3.add(&t2);
-
-                            t4.sub(&x3);
-                            t4.norm();
-                            x3 = self.getpx();
-                            x3.add(&self.z);
-                            x3.norm();
-                            let mut y3 = Q.x.clone();
-                            y3.add(&Q.z);
-                            y3.norm();
-                            x3.mul(&y3);
-                            y3 = t0.clone();
-                            y3.add(&t2);
-                            y3.rsub(&x3);
-                            y3.norm();
-                            x3 = t0.clone();
-                            x3.add(&t0);
-                            t0.add(&x3);
-                            t0.norm();
-                            t2.imul(b);
-
-                            let mut z3 = t1.clone();
-                            z3.add(&t2);
-                            z3.norm();
-                            t1.sub(&t2);
-                            t1.norm();
-                            y3.imul(b);
-
-                            x3 = y3.clone();
-                            x3.mul(&t4);
-                            t2 = t3.clone();
-                            t2.mul(&t1);
-                            x3.rsub(&t2);
-                            y3.mul(&t0);
-                            t1.mul(&z3);
-                            y3.add(&t1);
-                            t0.mul(&t3);
-                            z3.mul(&t4);
-                            z3.add(&t0);
-
-                            self.x = x3.clone();
-                            self.x.norm();
-                            self.y = y3.clone();
-                            self.y.norm();
-                            self.z = z3.clone();
-                            self.z.norm();
-                        }
-                    }
-                
+                    #[cfg(not(all(target_os = "zkvm", target_vendor = "succinct")))]
+                    self.non_succinct_add(Q);
+                }
             } else {
                 let mut t0 = self.x.clone();
                 let mut t1 = self.y.clone();
@@ -1088,6 +966,109 @@ impl ECP {
         return;
     }
 
+    #[cfg(all(target_os = "zkvm", target_vendor = "succinct"))]
+    fn succinct_add(&mut self, Q: &ECP) {
+        use crate::succinct::bls12381_add;
+
+        let mut point = self.clone();
+        let mut q_point = Q.clone();
+
+        let mut p_bytes = [0u8; 96];
+        let mut q_bytes = [0u8; 96];
+        point.affine();
+        point.to_bytes_le(&mut p_bytes, false);
+        q_point.affine();
+        q_point.to_bytes_le(&mut q_bytes, false);
+
+        bls12381_add(&mut p_bytes, &q_bytes);
+
+        let mut output = [0u8; 97];
+        output[0] = 0x04;
+
+        output[1..49].copy_from_slice(&p_bytes[..48].iter().rev().copied().collect::<Vec<_>>());
+        output[49..].copy_from_slice(&p_bytes[48..].iter().rev().copied().collect::<Vec<_>>());
+
+        *self = ECP::from_bytes(&output);
+    }
+
+    #[cfg(not(all(target_os = "zkvm", target_vendor = "succinct")))]
+    fn non_succinct_add(&mut self, Q: &ECP) {
+        let b = 3 * rom::CURVE_B_I;
+        let mut t0 = self.x.clone();
+        t0.mul(&Q.x);
+        let mut t1 = self.y.clone();
+        t1.mul(&Q.y);
+        let mut t2 = self.z.clone();
+        t2.mul(&Q.z);
+        let mut t3 = self.x.clone();
+        t3.add(&self.y);
+        t3.norm();
+        let mut t4 = Q.x.clone();
+        t4.add(&Q.y);
+        t4.norm();
+        t3.mul(&t4);
+        t4 = t0.clone();
+        t4.add(&t1);
+
+        t3.sub(&t4);
+        t3.norm();
+        t4 = self.getpy();
+        t4.add(&self.z);
+        t4.norm();
+        let mut x3 = Q.y.clone();
+        x3.add(&Q.z);
+        x3.norm();
+
+        t4.mul(&x3);
+        x3 = t1.clone();
+        x3.add(&t2);
+
+        t4.sub(&x3);
+        t4.norm();
+        x3 = self.getpx();
+        x3.add(&self.z);
+        x3.norm();
+        let mut y3 = Q.x.clone();
+        y3.add(&Q.z);
+        y3.norm();
+        x3.mul(&y3);
+        y3 = t0.clone();
+        y3.add(&t2);
+        y3.rsub(&x3);
+        y3.norm();
+        x3 = t0.clone();
+        x3.add(&t0);
+        t0.add(&x3);
+        t0.norm();
+        t2.imul(b);
+
+        let mut z3 = t1.clone();
+        z3.add(&t2);
+        z3.norm();
+        t1.sub(&t2);
+        t1.norm();
+        y3.imul(b);
+
+        x3 = y3.clone();
+        x3.mul(&t4);
+        t2 = t3.clone();
+        t2.mul(&t1);
+        x3.rsub(&t2);
+        y3.mul(&t0);
+        t1.mul(&z3);
+        y3.add(&t1);
+        t0.mul(&t3);
+        z3.mul(&t4);
+        z3.add(&t0);
+
+        self.x = x3.clone();
+        self.x.norm();
+        self.y = y3.clone();
+        self.y.norm();
+        self.z = z3.clone();
+        self.z.norm();
+    }
+
     /// Differential Add for Montgomery curves.
     ///
     /// self += Q
@@ -1193,68 +1174,119 @@ impl ECP {
             }
             R0.clone()
         } else {
-            let mut W: [ECP; 8] = [
-                ECP::new(),
-                ECP::new(),
-                ECP::new(),
-                ECP::new(),
-                ECP::new(),
-                ECP::new(),
-                ECP::new(),
-                ECP::new(),
-            ];
+            // Need to come up with a better way to handle this. A separate flag needs to be added
+            // to apply the succinct_mul function only for bls381 32-bit roms.
+            cfg_if::cfg_if! {
+                if #[cfg(all(target_os = "zkvm", target_vendor = "succinct"))] {
+                    self.succinct_mul(e)
+                } else {
+                    let mut W: [ECP; 8] = [
+                        ECP::new(),
+                        ECP::new(),
+                        ECP::new(),
+                        ECP::new(),
+                        ECP::new(),
+                        ECP::new(),
+                        ECP::new(),
+                        ECP::new(),
+                    ];
 
-            const CT: usize = 1 + (big::NLEN * (big::BASEBITS as usize) + 3) / 4;
-            let mut w: [i8; CT] = [0; CT];
+                    const CT: usize = 1 + (big::NLEN * (big::BASEBITS as usize) + 3) / 4;
+                    let mut w: [i8; CT] = [0; CT];
 
-            let mut Q = self.clone();
-            Q.dbl();
+                    let mut Q = self.clone();
+                    Q.dbl();
 
-            W[0] = self.clone();
+                    W[0] = self.clone();
 
-            for i in 1..8 {
-                W[i] = W[i - 1].clone();
-                W[i].add(&Q);
+                    for i in 1..8 {
+                        W[i] = W[i - 1].clone();
+                        W[i].add(&Q);
+                    }
+
+                    // make exponent odd - add 2P if even, P if odd
+                    let mut t = e.clone();
+                    let s = t.parity();
+                    t.inc(1);
+                    t.norm();
+                    let ns = t.parity();
+                    let mut mt = t.clone();
+                    mt.inc(1);
+                    mt.norm();
+                    t.cmove(&mt, s);
+                    Q.cmove(&self, ns);
+                    let C = Q.clone();
+
+                    let nb = 1 + (t.nbits() + 3) / 4;
+
+                    // convert exponent to signed 4-bit window
+                    for i in 0..nb {
+                        w[i] = (t.lastbits(5) - 16) as i8;
+                        t.dec(w[i] as isize);
+                        t.norm();
+                        t.fshr(4);
+                    }
+                    w[nb] = t.lastbits(5) as i8;
+
+                    let mut P = W[((w[nb] as usize) - 1) / 2].clone();
+                    for i in (0..nb).rev() {
+                        Q.selector(&W, w[i] as i32);
+                        P.dbl();
+                        P.dbl();
+                        P.dbl();
+                        P.dbl();
+                        P.add(&Q);
+                    }
+                    P.sub(&C); /* apply correction */
+                    P
+                }
             }
-
-            // make exponent odd - add 2P if even, P if odd
-            let mut t = e.clone();
-            let s = t.parity();
-            t.inc(1);
-            t.norm();
-            let ns = t.parity();
-            let mut mt = t.clone();
-            mt.inc(1);
-            mt.norm();
-            t.cmove(&mt, s);
-            Q.cmove(&self, ns);
-            let C = Q.clone();
-
-            let nb = 1 + (t.nbits() + 3) / 4;
-
-            // convert exponent to signed 4-bit window
-            for i in 0..nb {
-                w[i] = (t.lastbits(5) - 16) as i8;
-                t.dec(w[i] as isize);
-                t.norm();
-                t.fshr(4);
-            }
-            w[nb] = t.lastbits(5) as i8;
-
-            let mut P = W[((w[nb] as usize) - 1) / 2].clone();
-            for i in (0..nb).rev() {
-                Q.selector(&W, w[i] as i32);
-                P.dbl();
-                P.dbl();
-                P.dbl();
-                P.dbl();
-                P.add(&Q);
-            }
-            P.sub(&C); /* apply correction */
-            P
         };
         T.affine();
         T
+    }
+
+    #[cfg(all(target_os = "zkvm", target_vendor = "succinct"))]
+    fn succinct_mul(&self, e: &Big) -> ECP {
+        use crate::succinct::u8_to_u32;
+        use sp1_zkvm::precompiles::bls12381::Bls12381;
+        use sp1_zkvm::precompiles::utils::AffinePoint;
+
+        let mut point = self.clone();
+        let mut p_bytes = [0u8; 96];
+
+        point.affine();
+        point.to_bytes_le(&mut p_bytes, false);
+
+        let mut a_point = AffinePoint::<Bls12381, 24>::from_le_bytes(p_bytes);
+
+        let mut scalar = vec![0u8; 48];
+        e.to_byte_array(&mut scalar, 0);
+        scalar.reverse();
+        let scalar_u32 = u8_to_u32(scalar);
+
+        a_point.mul_assign(&scalar_u32.try_into().unwrap());
+        let a_point_le_bytes = a_point.to_le_bytes();
+
+        let mut output = [0u8; 97];
+        output[0] = 0x04;
+
+        output[1..49].copy_from_slice(
+            &a_point_le_bytes[..48]
+                .iter()
+                .rev()
+                .copied()
+                .collect::<Vec<_>>(),
+        );
+        output[49..].copy_from_slice(
+            &a_point_le_bytes[48..]
+                .iter()
+                .rev()
+                .copied()
+                .collect::<Vec<_>>(),
+        );
+
+        ECP::from_bytes(&output)
     }
 
     /// Multiply two points by scalars
@@ -1384,7 +1416,6 @@ impl ECP {
         let P = self.mul(&c);
         *self = P.clone();
     }
-
 
     /// Map It
     ///
