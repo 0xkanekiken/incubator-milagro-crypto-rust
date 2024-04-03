@@ -624,6 +624,9 @@ pub fn gs(e: &Big) -> [Big; 4] {
 #[allow(non_snake_case)]
 #[inline(always)]
 pub fn g1mul(P: &ECP, e: &Big) -> ECP {
+    #[cfg(all(target_os = "zkvm", target_vendor = "succinct"))]
+    return P.mul(e);
+
     if rom::USE_GLV {
         let mut R = P.clone();
         let mut Q = P.clone();
