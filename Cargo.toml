@@ -12,8 +12,6 @@ codec = { version = "3.6.1", package = "parity-scale-codec", default-features = 
 scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
 cfg-if = "1.0"
 sp1-zkvm = { git = "https://github.com/0xkanekiken/sp1.git", branch = "kaneki-bls12-381-precompile" }
-tracing = "0.1"
-tracing-subscriber = "0.3"
 
 [dev-dependencies]
 hex = "0.3"
