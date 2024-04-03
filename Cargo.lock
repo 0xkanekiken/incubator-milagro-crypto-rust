@@ -982,7 +982,18 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
+ "sp1-derive",
  "sp1-zkvm",
+]
+
+[[package]]
+name = "sp1-derive"
+version = "0.1.0"
+source = "git+https://github.com/0xkanekiken/sp1.git?branch=kaneki-bls12-381-precompile#71cb99dd4ba370a79444e65a2673e07acb944a3b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
 ]
 
 [[package]]

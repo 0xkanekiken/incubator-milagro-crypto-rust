@@ -12,6 +12,7 @@ codec = { version = "3.6.1", package = "parity-scale-codec", default-features = 
 scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
 cfg-if = "1.0"
 sp1-zkvm = { git = "https://github.com/0xkanekiken/sp1.git", branch = "kaneki-bls12-381-precompile" }
+sp1-derive = { git = "https://github.com/0xkanekiken/sp1.git", branch = "kaneki-bls12-381-precompile" }
 
 [dev-dependencies]
 hex = "0.3"
@@ -20,38 +21,6 @@ serde_json = "1.0"
 serde_derive = "1.0"
 criterion = "0.3.0"
 rand = "0.7.2"
-
-[[bench]]
-name = "bls381"
-harness = false
-
-[[bench]]
-name = "ed25519"
-harness = false
-
-[[bench]]
-name = "goldilocks"
-harness = false
-
-[[bench]]
-name = "nist256"
-harness = false
-
-[[bench]]
-name = "bn254"
-harness = false
-
-[[bench]]
-name = "rsa2048"
-harness = false
-
-[[bench]]
-name = "rsa3072"
-harness = false
-
-[[bench]]
-name = "rsa4096"
-harness = false
 
 [features]
 default = ["std"]

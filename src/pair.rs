@@ -33,6 +33,7 @@ use crate::types::{CurvePairingType, SexticTwist, SignOfX};
 
 #[allow(non_snake_case)]
 #[inline(always)]
+#[sp1_derive::cycle_tracker]
 fn linedbl(A: &mut ECP2, qx: &FP, qy: &FP) -> FP12 {
     let mut xx = A.getpx(); //X
     let mut yy = A.getpy(); //Y
@@ -86,6 +87,7 @@ fn linedbl(A: &mut ECP2, qx: &FP, qy: &FP) -> FP12 {
 
 #[allow(non_snake_case)]
 #[inline(always)]
+#[sp1_derive::cycle_tracker]
 fn lineadd(A: &mut ECP2, B: &ECP2, qx: &FP, qy: &FP) -> FP12 {
     let mut x1 = A.getpx(); // X1
     let mut y1 = A.getpy(); // Y1
@@ -135,6 +137,7 @@ fn lineadd(A: &mut ECP2, B: &ECP2, qx: &FP, qy: &FP) -> FP12 {
 
 /* prepare ate parameter, n=6u+2 (BN) or n=u (BLS), n3=3*n */
 #[allow(non_snake_case)]
+#[sp1_derive::cycle_tracker]
 fn lbits(n3: &mut Big, n: &mut Big) -> usize {
     *n = Big::new_ints(&rom::CURVE_BNX);
     if ecp::CURVE_PAIRING_TYPE == CurvePairingType::Bn {
@@ -154,6 +157,7 @@ fn lbits(n3: &mut Big, n: &mut Big) -> usize {
 
 /* prepare for multi-pairing */
 #[inline(always)]
+#[sp1_derive::cycle_tracker]
 pub fn initmp() -> Vec<FP12> {
     let mut r: Vec<FP12> = Vec::with_capacity(rom::ATE_BITS);
     for _ in 0..rom::ATE_BITS {
@@ -164,6 +168,7 @@ pub fn initmp() -> Vec<FP12> {
 
 /* basic Miller loop */
 #[inline(always)]
+#[sp1_derive::cycle_tracker]
 pub fn miller(r: &[FP12]) -> FP12 {
     let mut res = FP12::new_int(1);
     for i in (1..rom::ATE_BITS).rev() {
@@ -180,6 +185,7 @@ pub fn miller(r: &[FP12]) -> FP12 {
 
 /* Accumulate another set of line functions for n-pairing */
 #[allow(non_snake_case)]
+#[sp1_derive::cycle_tracker]
 pub fn another(r: &mut [FP12], P1: &ECP2, Q1: &ECP) {
     let mut f = FP2::new_bigs(Big::new_ints(&rom::FRA), Big::new_ints(&rom::FRB));
     let mut n = Big::new();
@@ -241,6 +247,7 @@ pub fn another(r: &mut [FP12], P1: &ECP2, Q1: &ECP) {
 /* Optimal R-ate pairing */
 #[allow(non_snake_case)]
 #[inline(always)]
+#[sp1_derive::cycle_tracker]
 pub fn ate(P1: &ECP2, Q1: &ECP) -> FP12 {
     let mut f = FP2::new_bigs(Big::new_ints(&rom::FRA), Big::new_ints(&rom::FRB));
     let mut n = Big::new();
@@ -311,6 +318,7 @@ pub fn ate(P1: &ECP2, Q1: &ECP) -> FP12 {
 /* Optimal R-ate double pairing e(P,Q).e(R,S) */
 #[allow(non_snake_case)]
 #[inline(always)]
+#[sp1_derive::cycle_tracker]
 pub fn ate2(P1: &ECP2, Q1: &ECP, R1: &ECP2, S1: &ECP) -> FP12 {
     let mut f = FP2::new_bigs(Big::new_ints(&rom::FRA), Big::new_ints(&rom::FRB));
     let mut n = Big::new();
@@ -407,6 +415,7 @@ pub fn ate2(P1: &ECP2, Q1: &ECP, R1: &ECP2, S1: &ECP) -> FP12 {
 
 // final exponentiation - keep separate for multi-pairings and to avoid thrashing stack
 #[inline(always)]
+#[sp1_derive::cycle_tracker]
 pub fn fexp(m: &FP12) -> FP12 {
     let f = FP2::new_bigs(Big::new_ints(&rom::FRA), Big::new_ints(&rom::FRB));
     let mut x = Big::new_ints(&rom::CURVE_BNX);
@@ -623,6 +632,7 @@ pub fn gs(e: &Big) -> [Big; 4] {
 /* Multiply P by e in group G1 */
 #[allow(non_snake_case)]
 #[inline(always)]
+#[sp1_derive::cycle_tracker]
 pub fn g1mul(P: &ECP, e: &Big) -> ECP {
     #[cfg(all(target_os = "zkvm", target_vendor = "succinct"))]
     return P.mul(e);
@@ -662,6 +672,7 @@ pub fn g1mul(P: &ECP, e: &Big) -> ECP {
 /* Multiply P by e in group G2 */
 #[allow(non_snake_case)]
 #[inline(always)]
+#[sp1_derive::cycle_tracker]
 pub fn g2mul(P: &ECP2, e: &Big) -> ECP2 {
     if rom::USE_GS_G2 {
         let mut Q: [ECP2; 4] = [ECP2::new(), ECP2::new(), ECP2::new(), ECP2::new()];
@@ -699,6 +710,7 @@ pub fn g2mul(P: &ECP2, e: &Big) -> ECP2 {
 /* f=f^e */
 /* Note that this method requires a lot of RAM! Better to use compressed XTR method, see FP4.java */
 #[inline(always)]
+#[sp1_derive::cycle_tracker]
 pub fn gtpow(d: &FP12, e: &Big) -> FP12 {
     if rom::USE_GS_GT {
         let mut g: [FP12; 4] = [FP12::new(), FP12::new(), FP12::new(), FP12::new()];
