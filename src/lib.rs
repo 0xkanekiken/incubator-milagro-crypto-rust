@@ -1,4 +1,4 @@
-#![cfg_attr(not(feature = "std"), no_std)]
+// #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
 extern crate serde_json;
@@ -8,7 +8,6 @@ extern crate serde_derive;
 
 extern crate alloc;
 
-mod std;
 pub mod aes;
 #[cfg(target_pointer_width = "32")]
 #[path = "arch/arch32.rs"]
@@ -24,6 +23,7 @@ pub mod hash512;
 pub mod nhs;
 pub mod rand;
 pub mod sha3;
+mod std;
 pub mod types;
 
 #[cfg(all(target_os = "zkvm", target_vendor = "succinct"))]
